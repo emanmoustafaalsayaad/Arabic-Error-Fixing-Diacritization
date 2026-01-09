@@ -1,3 +1,40 @@
+## Grammar Correction Model (Seq2Seq) — Implementation Plan
+
+### 🎯 Goal
+Build a **sequence-to-sequence (Seq2Seq)** model that automatically corrects grammatical errors in Arabic text by transforming an **incorrect sentence** into its **correct form**.
+
+- **Input:**  
+  `ذهب الولد المدرسة`
+- **Output:**  
+  `ذهب الولد إلى المدرسة`
+
+This component handles **full-sentence grammatical correction**.
+
+---
+
+## 📁 Component Reference
+
+**File:** `correction_model.py`
+
+---
+
+## 1️⃣ `read_text_file(path)`
+
+**Purpose**  
+Reads raw text lines from QALB `.sent` or `.cor` files.
+
+**Input**  
+- `path`: Path to a text file
+
+**Output**  
+A list of sentences (strings)
+
+**Example Output**
+```python
+[
+  "ذهب الولد المدرسة",
+  "أكلت التفاحة"
+]
 
 ---
 

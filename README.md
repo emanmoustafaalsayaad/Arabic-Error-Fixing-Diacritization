@@ -49,3 +49,6 @@ Reads raw text lines from QALB `.sent` or `.cor` files.
   "ذهب الولد المدرسة",
   "أكلت التفاحة"
 ]
+
+---
+

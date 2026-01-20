@@ -10,7 +10,9 @@ Here is a guide to every script in this folder and what it does.
 | `evaluate_model_clean.py` | **Official Evaluation.** Calculates BLEU/GLEU/ROUGE on clean output. | 📊 Metrics. |
 | `evaluate_model_raw.py` | Debug Evaluation. Shows raw model output (with hallucinations). | 🐞 Debug. |
 ---
-
+*   **Link**: [Google Drive Folder](https://drive.google.com/drive/u/0/folders/1rBwuBdGMDc-1ndfaZhgkIXGFwgz1Sf4f)
+*   **Description**: This folder contains the saved model output (weights + config) accessible by anyone. You can download this directory and point the `verify_model.py` script to it to run corrections.
+---
 ## 1. Project Overview & Architecture
 This project implements a **Grammatical Error Correction (GEC)** system for Arabic text using the **Sequence-to-Sequence (Seq2Seq)** paradigm.
 The core idea is to treat "Error Correction" as a "Translation" task:

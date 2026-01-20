@@ -1,132 +1,44 @@
-## Grammar Correction and Diacritization Pipeline
+# AraT5 QALB 2014 Grammatical Error Correction
 
-This repository implements a **modular pipeline for Arabic grammatical error correction and diacritization**, grounded in QALB annotations.  
-Each component is designed to solve a well-defined subtask, allowing interpretability, controlled evaluation, and independent improvement.
+This directory contains the codebase for training and evaluating an AraT5-based model for Arabic Grammatical Error Correction (GEC) on the QALB 2014 dataset.
 
----
+## Files Overview
 
-## 1️⃣ Grammar Correction Model (Seq2Seq)
+### 1. `qalb_pipeline_kaggel.ipynb`
+**Purpose**: This notebook implements the complete training pipeline, optimized for a Kaggle Kernel environment with GPU support.
 
-### 🎯 Goal
-Build a **sequence-to-sequence (Seq2Seq)** model that automatically corrects grammatical errors in Arabic text by transforming an **incorrect sentence** into its **correct form**.
+**Key Steps**:
+- **Setup**: Installs necessary dependencies (`transformers`, `datasets`, `pyarabic`, etc.).
+- **Data Preparation**: Downloads the QALB dataset and parses the M2 format files (Train + Dev) into a CSV format (`incorrect`, `correct` pairs).
+- **Training**: Fine-tunes the `UBC-NLP/AraT5v2-base-1024` model on the processed data. It supports resuming training from checkpoints saved in Google Drive.
+- **Export**: Saves the fine-tuned model checkpoints locally for later use.
 
-- **Input:**  
-  `ذهب الولد المدرسة`
-- **Output:**  
-  `ذهب الولد إلى المدرسة`
+**Usage**: Run this notebook to train the model from scratch or resume training. Ensure a GPU (T4 x2 or P100) is enabled.
 
-This component performs **full-sentence grammatical correction**.
+### 2. `qalb_test_evaluation3.ipynb`
+**Purpose**: This notebook handles the evaluation of the trained model on the QALB 2014 Test set.
 
----
+**Key Steps**:
+- **Setup**: Installs dependencies.
+- **Data Loading**: Downloads and extracts the QALB 2014 Test data.
+- **Model Loading**: Downloads your specific fine-tuned model checkpoint from Google Drive.
+- **Inference**: Generates corrections for the test sentences.
+- **Scoring**: Calculates **BLEU** and **GLEU** scores against the reference corrections.
+- **Diacritization (Post-processing)**: Applies an optional "Tashkeel" step using `Abdou/arabic-tashkeel-flan-t5-small` to add diacritics to the corrected output.
+- **Output**: Saves predictions to `qalb_test_predictions.txt` and displays sample comparisons (Input vs. Reference vs. Prediction).
 
-### 🏆 Model Selection
+**Usage**: Run this notebook to evaluate your trained model's performance and generate reportable metrics.
 
-**Selected Model:** `UBC-NLP/AraT5v2-base-1024`
+## Requirements
+- Python 3.x
+- `transformers`
+- `datasets`
+- `pyarabic`
+- `gdown`
+- `sentencepiece`
+- `evaluate`
+- `sacrebleu`
+- `torch` (with GPU support recommended)
 
-- **Architecture:** Encoder–Decoder (T5-style)
-- **Task:** Text-to-text grammatical correction
-- **Rationale:**
-  - Designed for Arabic text generation
-  - Naturally fits sentence-level correction
-  - Performs well in low-resource fine-tuning settings
-  - Clean and interpretable Seq2Seq formulation
-
----
-
-### 📁 Component Design
-
-**File:** `correction_model.py`
-
-#### 1. `read_text_file(path)`
-Reads raw text lines from QALB `.sent` or `.cor` files.
-
-- **Input:** Path to text file  
-- **Output:** List of sentences
-
-**Example Output:**
-```python
-[
-  "ذهب الولد المدرسة",
-  "أكلت التفاحة"
-]
-
-```
----
-## Diacritization Model Implementation Plan
-
-### Goal Description
-Add the final touches to Arabic text by applying **Diacritics (Tashkeel)** to already corrected sentences.
-
-**Example**
-- **Input:**  
-  `ذهب الولد إلى المدرسة`
-- **Output:**  
-  `ذَهَبَ الوَلَدُ إِلَى المَدْرَسَةِ`
-
----
-
-## Strategy: Pre-trained Model 🧠
-
-Training a diacritizer from scratch requires **massive fully-diacritized corpora**, which are not available in **QALB**.  
-Therefore, we rely on an **open-source pre-trained model**.
-
-### Recommended Models (Initial Candidates)
-- `interpress/shakkala`
-- `mannaa/tashkeela-bert`
-
-We treat diacritization as a **translation task**:
-> Non-Diacritized Arabic → Diacritized Arabic
-
----
-
-## Component Design
-
-**File:** `diacritization_model.py`
-
----
-
-## 1. Model Selection 🏆
-
-### Selected Model
-**`glonor/byt5-arabic-diacritization`**  
-(ByT5 – Seq2Seq)
-
-### Architecture
-- **Byte-Level T5**
-- Text-to-Text (Seq2Seq)
-
-### Reason for Selection
-- Consumes **raw text directly**
-- Outputs **fully diacritized text**
-- Robust and easy to integrate
-
-### Rejected Alternatives
-- **AraT5 / Shakkala (BERT/RNN-based)**  
-  Rejected because they output **raw class labels**, which require:
-  - Complex decoding maps
-  - Error-prone post-processing
-
-- **Fine-Tashkeel**  
-  Rejected due to:
-  - Excessive model size (~3GB)
-  - Download and deployment issues
-
-**Decision:**  
-➡️ Proceed with **ByT5 diacritization**
-
----
-
-## 2. Implementation Steps
-
-### Model Loading
-- Use:
-  - `AutoModelForSeq2SeqLM`
-  - `AutoTokenizer`
-- Load: `glonor/byt5-arabic-diacritization`
-
-### Inference
-- **Input:** Raw Arabic sentence
-- **Process:**
-```python
-model.generate(input_ids)
-
+## Notes
+- These notebooks are designed to interact with Google Drive for model storage and retrieval. Ensure you have the necessary file IDs and permissions if you are using your own checkpoints.

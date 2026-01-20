@@ -1,132 +1,45 @@
-## Grammar Correction and Diacritization Pipeline
+# Model Evaluation Documentation
 
-This repository implements a **modular pipeline for Arabic grammatical error correction and diacritization**, grounded in QALB annotations.  
-Each component is designed to solve a well-defined subtask, allowing interpretability, controlled evaluation, and independent improvement.
+This document describes the evaluation scripts and results for the Arabic GEC model. Two evaluation modes are available to assess model performance with and without special tokens.
 
----
+## Evaluation Scripts
 
-## 1️⃣ Grammar Correction Model (Seq2Seq)
+### 1. `evaluate_model_clean.py`
+- **Purpose**: Evaluates the model's generated text in a human-readable format, similar to standard end-user output.
+- **Behavior**: Hides special tokens (`</s>`, `<s>`, `<pad>`).
+- **Output File**: `qalb_2015_l2_test_predictions_clean.txt`
+- **Use Case**: Best for calculating standard metrics (BLEU, GLEU, ROUGE, BERTScore) as it aligns with the clean reference text.
 
-### 🎯 Goal
-Build a **sequence-to-sequence (Seq2Seq)** model that automatically corrects grammatical errors in Arabic text by transforming an **incorrect sentence** into its **correct form**.
+### 2. `evaluate_model_raw.py`
+- **Purpose**: Evaluates the raw output from the model's tokenizer.
+- **Behavior**: Includes ALL tokens output by the model, including start/end and padding tokens.
+- **Output File**: `qalb_2015_l2_test_predictions_raw.txt`
+- **Use Case**: Debugging model behavior, inspecting sentence boundary generation, and analyzing tokenization artifacts.
 
-- **Input:**  
-  `ذهب الولد المدرسة`
-- **Output:**  
-  `ذهب الولد إلى المدرسة`
+## Evaluation Results (QALB 2015 Test Set)
 
-This component performs **full-sentence grammatical correction**.
+Comparison of model performance between clean and raw outputs:
 
----
+| Metric | Clean Output | Raw Output (with tokens) | Interpretation |
+| :--- | :--- | :--- | :--- |
+| **BLEU** | 30.73 | **32.56** | Raw output surprisingly scored higher in standard BLEU, possibly due to length penalties or specific n-gram overlap dynamics. |
+| **GLEU** | **36.69** | 25.96 | Google BLEU favors the clean output significantly. |
+| **ROUGE-L** | **0.1177** | 0.0483 | Clean output matches reference structure much better. |
+| **BERTScore F1** | **0.8780** | 0.7907 | Semantic similarity is much higher for clean output. |
+| **BERTScore P** | **0.9082** | 0.7762 | Precision drops in raw output due to "irrelevant" special tokens. |
+| **BERTScore R** | 0.8515 | 0.8254 | Recall is slightly better in clean output. |
 
-### 🏆 Model Selection
+### Analysis
+- **Standard Metrics (ROUGE, BERTScore)**: The "Clean" output performs drastically better. This is expected because the reference sentences are clean text. Including special tokens in the prediction is penalized as "incorrect" text by these metrics.
+- **BLEU vs GLEU**: The discrepancy between BLEU and GLEU suggests that while n-gram overlap exists in the raw output, the overall fluency and structure (captured better by GLEU/BERTScore) are better represented in the clean output.
 
-**Selected Model:** `UBC-NLP/AraT5v2-base-1024`
+## How to Run
+To reproduce these results:
 
-- **Architecture:** Encoder–Decoder (T5-style)
-- **Task:** Text-to-text grammatical correction
-- **Rationale:**
-  - Designed for Arabic text generation
-  - Naturally fits sentence-level correction
-  - Performs well in low-resource fine-tuning settings
-  - Clean and interpretable Seq2Seq formulation
+```bash
+# For clean evaluation
+python3 evaluate_model_clean.py
 
----
-
-### 📁 Component Design
-
-**File:** `correction_model.py`
-
-#### 1. `read_text_file(path)`
-Reads raw text lines from QALB `.sent` or `.cor` files.
-
-- **Input:** Path to text file  
-- **Output:** List of sentences
-
-**Example Output:**
-```python
-[
-  "ذهب الولد المدرسة",
-  "أكلت التفاحة"
-]
-
+# For raw evaluation
+python3 evaluate_model_raw.py
 ```
----
-## Diacritization Model Implementation Plan
-
-### Goal Description
-Add the final touches to Arabic text by applying **Diacritics (Tashkeel)** to already corrected sentences.
-
-**Example**
-- **Input:**  
-  `ذهب الولد إلى المدرسة`
-- **Output:**  
-  `ذَهَبَ الوَلَدُ إِلَى المَدْرَسَةِ`
-
----
-
-## Strategy: Pre-trained Model 🧠
-
-Training a diacritizer from scratch requires **massive fully-diacritized corpora**, which are not available in **QALB**.  
-Therefore, we rely on an **open-source pre-trained model**.
-
-### Recommended Models (Initial Candidates)
-- `interpress/shakkala`
-- `mannaa/tashkeela-bert`
-
-We treat diacritization as a **translation task**:
-> Non-Diacritized Arabic → Diacritized Arabic
-
----
-
-## Component Design
-
-**File:** `diacritization_model.py`
-
----
-
-## 1. Model Selection 🏆
-
-### Selected Model
-**`glonor/byt5-arabic-diacritization`**  
-(ByT5 – Seq2Seq)
-
-### Architecture
-- **Byte-Level T5**
-- Text-to-Text (Seq2Seq)
-
-### Reason for Selection
-- Consumes **raw text directly**
-- Outputs **fully diacritized text**
-- Robust and easy to integrate
-
-### Rejected Alternatives
-- **AraT5 / Shakkala (BERT/RNN-based)**  
-  Rejected because they output **raw class labels**, which require:
-  - Complex decoding maps
-  - Error-prone post-processing
-
-- **Fine-Tashkeel**  
-  Rejected due to:
-  - Excessive model size (~3GB)
-  - Download and deployment issues
-
-**Decision:**  
-➡️ Proceed with **ByT5 diacritization**
-
----
-
-## 2. Implementation Steps
-
-### Model Loading
-- Use:
-  - `AutoModelForSeq2SeqLM`
-  - `AutoTokenizer`
-- Load: `glonor/byt5-arabic-diacritization`
-
-### Inference
-- **Input:** Raw Arabic sentence
-- **Process:**
-```python
-model.generate(input_ids)
-

@@ -26,8 +26,7 @@ Comparison of model performance between clean and raw outputs:
 | **GLEU** | **36.69** | 25.96 | Google BLEU favors the clean output significantly. |
 | **ROUGE-L** | **0.1177** | 0.0483 | Clean output matches reference structure much better. |
 | **BERTScore F1** | **0.8780** | 0.7907 | Semantic similarity is much higher for clean output. |
-| **BERTScore P** | **0.9082** | 0.7762 | Precision drops in raw output due to "irrelevant" special tokens. |
-| **BERTScore R** | 0.8515 | 0.8254 | Recall is slightly better in clean output. |
+
 
 ### Analysis
 - **Standard Metrics (ROUGE, BERTScore)**: The "Clean" output performs drastically better. This is expected because the reference sentences are clean text. Including special tokens in the prediction is penalized as "incorrect" text by these metrics.

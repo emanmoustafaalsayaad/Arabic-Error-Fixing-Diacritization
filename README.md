@@ -10,6 +10,48 @@ Here is a guide to every script in this folder and what it does.
 | `evaluate_model_clean.py` | **Official Evaluation.** Calculates BLEU/GLEU/ROUGE on clean output. | 📊 Metrics. |
 | `evaluate_model_raw.py` | Debug Evaluation. Shows raw model output (with hallucinations). | 🐞 Debug. |
 ---
+
+## 1. Project Overview & Architecture
+This project implements a **Grammatical Error Correction (GEC)** system for Arabic text using the **Sequence-to-Sequence (Seq2Seq)** paradigm.
+The core idea is to treat "Error Correction" as a "Translation" task:
+*   **Source Language**: Erroneous Arabic (from `.sent` files).
+*   **Target Language**: Correct Arabic (from `.cor` files).
+
+### The Model: AraBART
+I chose **`moussaKam/AraBART`** as the backbone.
+*   **Type**: BART (Bidirectional and Auto-Regressive Transformers).
+*   **Why?**: Unlike T5 (which had vocabulary issues) and mBART (which was too large), AraBART is pretrained specifically on Arabic data and fits within the memory constraints of a local machine while delivering strong performance.
+
+## 2. Implementation Logic (`train_gec_model.py`)
+
+### A. Custom Dataset (`QALBDataset`)
+I implemented a custom PyTorch `Dataset` class to handle the unique format of the QALB 2015 Shared Task data.
+*   **Parsing**: The raw files contain metadata (e.g., `S001_T02 word...`). My code strips these IDs to extract the pure text.
+*   **Tokenization**: It uses the `AraBART` tokenizer to convert text into numerical IDs. I explicitly handle padding (`<pad>`) and truncation to ensure uniform input size (`max_length=128`).
+*   **Augmentation Logic**: The class supports lists of file paths, allowing me to seamlessly merge the QALB 2014 and 2015 datasets to create a larger training corpus.
+
+### B. Training Configuration
+I configured the `Seq2SeqTrainer` with specific parameters to optimize for both performance and hardware limitations (Mac MPS):
+*   **Optimizer**: I utilized **Adafactor** instead of AdamW. Adafactor is designed to be memory-efficient, which is crucial when fine-tuning Transformers on consumer hardware.
+*   **Batch Size Strategy**: To avoid Out-Of-Memory (OOM) errors, I set the batch size to **1** but used `gradient_accumulation_steps=8`.
+    *   *Effect*: The model logically updates its weights every 8 samples, effectively simulating a batch size of 8 without the memory cost.
+*   **Epochs**: I trained for **30 epochs**. Since GEC is a subtle task (changing one character in a sentence), the model required extensive exposure to the data to learn the nuances.
+
+## 3. The "Repair" Utility (`repair_model.py`)
+One of the major challenges encountered was a bug where the model's embedding weights were not saved correctly during checkpointing (a known issue with some Hugging Face models + Safetensors).
+*   **Symptoms**: The model would output repetitive character noise (e.g., `تتتتت`).
+*   **Solution**: I wrote `repair_model.py`. This script loads the "broken" checkpoint and the original pretrained model side-by-side, copies the missing embedding weights from the original to the checkpoint, and saves a "Fixed" version. This rescued the training run without needing to restart.
+
+## 4. Evaluation Strategy
+I implemented a robust evaluation pipeline to measure success using standard NLP metrics.
+*   **Metric 1: BLEU**: Measures n-gram overlap. Good for general similarity.
+*   **Metric 2: GLEU (Google BLEU)**: Specialized for sentence rewriting. It penalizes "bad edits" and rewards "good edits" more accurately than BLEU.
+*   **Insight**: My "Augmented" model achieved a **GLEU score of ~36.7**, which is a strong baseline given the dataset size.
+
+## 5. Summary of Results
+By moving from a naive implementation (AraT5) to a robust, architecture-aware solution (AraBART + Adafactor + Augmentation), I successfully built a model that doesn't just copy text but actively corrects grammatical errors (e.g., fixing subject-verb agreement `أنا يحب` -> `أنا أحب`).
+---
+
 # Model Evaluation Documentation
 
 This document describes the evaluation scripts and results for the Arabic GEC model. Two evaluation modes are available to assess model performance with and without special tokens.

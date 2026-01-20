@@ -7,8 +7,6 @@ Here is a guide to every script in this folder and what it does.
 | `train_trial1_arat5.py` | Trial 1 (Failed). Implementation of AraT5-base that failed due to vocab mismatch. | ❌ Archive. |
 | `train_trial2_mt5.py` | Trial 2 (Failed). Implementation of mT5-base that failed due to hallucinations. | ❌ Archive. |
 | `train_trial3_arabart_broken.py` | Trial 3 (Failed). AraBART implementation **without** weight repair (broken output). | ❌ Archive. |
-| `repair_model.py` | **The Surgeon.** Fixes the "Missing Embeddings" bug in checkpoints. | 🔧 Utility. |
-| `verify_model.py` | **Quick Check.** Runs the model on sample sentences to see output. | 🧪 Testing. |
 | `evaluate_model_clean.py` | **Official Evaluation.** Calculates BLEU/GLEU/ROUGE on clean output. | 📊 Metrics. |
 | `evaluate_model_raw.py` | Debug Evaluation. Shows raw model output (with hallucinations). | 🐞 Debug. |
 ---

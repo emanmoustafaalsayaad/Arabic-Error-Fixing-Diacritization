@@ -6,17 +6,17 @@ Here is the complete journey of our data, from raw text to a finalized, repaired
 
 ```mermaid
 graph TD
-    A[Raw Data (.sent / .cor)] -->|Clean & Parse| B(QALBDataset Class)
-    B -->|Tokenize & ID Mapping| C{AraBART Tokenizer}
-    C -->|Input IDs & Labels| D[Seq2Seq Trainer]
+    A["Raw Data (.sent / .cor)"] -->|"Clean & Parse"| B("QALBDataset Class")
+    B -->|"Tokenize & ID Mapping"| C{"AraBART Tokenizer"}
+    C -->|"Input IDs & Labels"| D["Seq2Seq Trainer"]
     
     subgraph Training_on_Mac
-    D -->|Adafactor Optimizer| E[Training Loop 30 Epochs]
-    E -->|Save Checkpoint| F[Broken Checkpoint]
+    D -->|"Adafactor Optimizer"| E["Training Loop 30 Epochs"]
+    E -->|"Save Checkpoint"| F["Broken Checkpoint"]
     end
     
-    F -->|repair_model.py| G[Repaired Model w/ Embeddings]
-    G -->|verify_model.py| H[Final Inference Output]
+    F -->|"repair_model.py"| G["Repaired Model w/ Embeddings"]
+    G -->|"verify_model.py"| H["Final Inference Output"]
 ```
 
 ---
